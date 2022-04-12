@@ -1,3 +1,4 @@
+import sys
 import mmap
 import struct
 import math
@@ -12,6 +13,7 @@ class FieldSpec:
     name: str
     count: int = 0
     description: str = None
+    available: bool = True
 
     @property
     def struct_fmt(self):
@@ -55,8 +57,8 @@ FIELDS = [
     FieldSpec(fmt="i", name="numberOfTyresOut", description="Number of tyres out of track"),
     FieldSpec(fmt="i", name="pitLimiterOn", description="Pit limiter is on"),
     FieldSpec(fmt="f", name="abs", description="ABS in action"),
-    FieldSpec(fmt="f", name="kersCharge", description="Not used in ACC"),
-    FieldSpec(fmt="f", name="kersInput", description="Not used in ACC"),
+    FieldSpec(fmt="f", name="kersCharge", description="Not used in ACC", available=False),
+    FieldSpec(fmt="f", name="kersInput", description="Not used in ACC", available=False),
     FieldSpec(fmt="i", name="autoshifterOn", description="Automatic transmission on"),
     FieldSpec(fmt="f", count=2, name="rideHeight", description="Ride height: 0 front, 1 rear"),
     FieldSpec(fmt="f", name="turboBoost", description="Car turbo level"),
@@ -66,51 +68,51 @@ FIELDS = [
     FieldSpec(fmt="f", name="roadTemp", description="Road temperature"),
     FieldSpec(fmt="f", count=3, name="localAngularVel", description="Car angular velocity vector in local coordinates"),
     FieldSpec(fmt="f", name="finalFF", description="Force feedback signal"),
-    FieldSpec(fmt="f", name="performanceMeter", description="Not used in ACC"),
-    FieldSpec(fmt="i", name="engineBrake", description="Not used in ACC"),
-    FieldSpec(fmt="i", name="ersRecoveryLevel", description="Not used in ACC"),
-    FieldSpec(fmt="i", name="ersPowerLevel", description="Not used in ACC"),
-    FieldSpec(fmt="i", name="ersHeatCharging", description="Not used in ACC"),
-    FieldSpec(fmt="i", name="ersIsCharging", description="Not used in ACC"),
-    FieldSpec(fmt="f", name="kersCurrentKJ", description="Not used in ACC"),
-    FieldSpec(fmt="i", name="drsAvailable", description="Not used in ACC"),
-    FieldSpec(fmt="i", name="drsEnabled", description="Not used in ACC"),
+    FieldSpec(fmt="f", name="performanceMeter", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="engineBrake", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="ersRecoveryLevel", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="ersPowerLevel", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="ersHeatCharging", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="ersIsCharging", description="Not used in ACC", available=False),
+    FieldSpec(fmt="f", name="kersCurrentKJ", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="drsAvailable", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="drsEnabled", description="Not used in ACC", available=False),
     FieldSpec(fmt="f", count=4, name="brakeTemp", description="Brake discs temperatures"),
     FieldSpec(fmt="f", name="clutch", description="Clutch pedal input value (from -0 to 1.0)"),
-    FieldSpec(fmt="f", count=4, name="tyreTempI", description="Not shown in ACC"),
-    FieldSpec(fmt="f", count=4, name="tyreTempM", description="Not shown in ACC"),
-    FieldSpec(fmt="f", count=4, name="tyreTempO", description="Not shown in ACC"),
+    FieldSpec(fmt="f", count=4, name="tyreTempI", description="Not shown in ACC", available=False),
+    FieldSpec(fmt="f", count=4, name="tyreTempM", description="Not shown in ACC", available=False),
+    FieldSpec(fmt="f", count=4, name="tyreTempO", description="Not shown in ACC", available=False),
     FieldSpec(fmt="i", name="isAIControlled", description="Car is controlled by the AI"),
     FieldSpec(fmt="f", count=4 * 3, name="tyreContactPoint", description="Tyre contact point global coordinates [FL, FR, RL, RR]"),
     FieldSpec(fmt="f", count=4 * 3, name="tyreContactNormal", description="Tyre contact normal [FL, FR, RL, RR] [x,y,z]"),
     FieldSpec(fmt="f", count=4 * 3, name="tyreContactHeading", description="Tyre contact heading [FL, FR, RL, RR] [x,y,z]"),
     FieldSpec(fmt="f", name="brakeBias", description="Front brake bias, see Appendix 4"),
-    FieldSpec(fmt="f", count=3, name="localVelocity", descripton="Car velocity vector in local coordinates"),
-    FieldSpec(fmt="i", name="P2PActivation", descripton="Not used in ACC"),
-    FieldSpec(fmt="i", name="P2PStatus", descripton="Not used in ACC"),
-    FieldSpec(fmt="f", name="currentMaxRpm", descripton="Maximum engine rpm"),
-    FieldSpec(fmt="f", count=4, name="mz", descripton="Not shown in ACC"),
-    FieldSpec(fmt="f", count=4, name="fx", descripton="Not shown in ACC"),
-    FieldSpec(fmt="f", count=4, name="fy", descripton="Not shown in ACC"),
-    FieldSpec(fmt="f", count=4, name="slipRatio", descripton="Tyre slip ratio [FL, FR, RL, RR] in radians"),
-    FieldSpec(fmt="f", count=4, name="slipAngle", descripton="Tyre slip angle [FL, FR, RL, RR]"),
-    FieldSpec(fmt="i", name="tcinAction", descripton="TC in action"),
-    FieldSpec(fmt="i", name="absInAction", descripton="ABS in action"),
-    FieldSpec(fmt="f", count=4, name="suspensionDamage", descripton="Suspensions damage levels [FL, FR, RL, RR]"),
-    FieldSpec(fmt="f", count=4, name="tyreTemp", descripton="Tyres core temperatures [FL, FR, RL, RR]"),
-    FieldSpec(fmt="f", name="waterTemp", descripton="Water Temperature"),
-    FieldSpec(fmt="f", count=4, name="brakePressure", descripton="Brake pressure [FL, FR, RL, RR] see Appendix 2"),
-    FieldSpec(fmt="i", name="frontBrakeCompound", descripton="Brake pad compund front"),
-    FieldSpec(fmt="i", name="rearBrakeCompound", descripton="Brake pad compund rear"),
-    FieldSpec(fmt="f", count=4, name="padLife", descripton="Brake pad wear [FL, FR, RL, RR]"),
-    FieldSpec(fmt="f", count=4, name="discLife", descripton="Brake disk wear [FL, FR, RL, RR]"),
-    FieldSpec(fmt="i", name="ignitionOn", descripton="Ignition switch set to on?"),
-    FieldSpec(fmt="i", name="starterEngineOn", descripton="Starter Switch set to on?"),
-    FieldSpec(fmt="i", name="isEngineRunning", descripton="Engine running?"),
-    FieldSpec(fmt="f", name="kerbVibration", descripton="vibrations sent to the FFB, could be used for motion rigs"),
-    FieldSpec(fmt="f", name="slipVibrations", descripton="vibrations sent to the FFB, could be used for motion rigs"),
-    FieldSpec(fmt="f", name="gVibrations", descripton="vibrations sent to the FFB, could be used for motion rigs"),
-    FieldSpec(fmt="f", name="absVibrations", descripton="vibrations sent to the FFB, could be used for motion rigs"),
+    FieldSpec(fmt="f", count=3, name="localVelocity", description="Car velocity vector in local coordinates"),
+    FieldSpec(fmt="i", name="P2PActivation", description="Not used in ACC", available=False),
+    FieldSpec(fmt="i", name="P2PStatus", description="Not used in ACC", available=False),
+    FieldSpec(fmt="f", name="currentMaxRpm", description="Maximum engine rpm"),
+    FieldSpec(fmt="f", count=4, name="mz", description="Not shown in ACC", available=False),
+    FieldSpec(fmt="f", count=4, name="fx", description="Not shown in ACC", available=False),
+    FieldSpec(fmt="f", count=4, name="fy", description="Not shown in ACC", available=False),
+    FieldSpec(fmt="f", count=4, name="slipRatio", description="Tyre slip ratio [FL, FR, RL, RR] in radians"),
+    FieldSpec(fmt="f", count=4, name="slipAngle", description="Tyre slip angle [FL, FR, RL, RR]"),
+    FieldSpec(fmt="i", name="tcinAction", description="TC in action"),
+    FieldSpec(fmt="i", name="absInAction", description="ABS in action"),
+    FieldSpec(fmt="f", count=4, name="suspensionDamage", description="Suspensions damage levels [FL, FR, RL, RR]"),
+    FieldSpec(fmt="f", count=4, name="tyreTemp", description="Tyres core temperatures [FL, FR, RL, RR]"),
+    FieldSpec(fmt="f", name="waterTemp", description="Water Temperature"),
+    FieldSpec(fmt="f", count=4, name="brakePressure", description="Brake pressure [FL, FR, RL, RR] see Appendix 2"),
+    FieldSpec(fmt="i", name="frontBrakeCompound", description="Brake pad compund front"),
+    FieldSpec(fmt="i", name="rearBrakeCompound", description="Brake pad compund rear"),
+    FieldSpec(fmt="f", count=4, name="padLife", description="Brake pad wear [FL, FR, RL, RR]"),
+    FieldSpec(fmt="f", count=4, name="discLife", description="Brake disk wear [FL, FR, RL, RR]"),
+    FieldSpec(fmt="i", name="ignitionOn", description="Ignition switch set to on?"),
+    FieldSpec(fmt="i", name="starterEngineOn", description="Starter Switch set to on?"),
+    FieldSpec(fmt="i", name="isEngineRunning", description="Engine running?"),
+    FieldSpec(fmt="f", name="kerbVibration", description="vibrations sent to the FFB, could be used for motion rigs"),
+    FieldSpec(fmt="f", name="slipVibrations", description="vibrations sent to the FFB, could be used for motion rigs"),
+    FieldSpec(fmt="f", name="gVibrations", description="vibrations sent to the FFB, could be used for motion rigs"),
+    FieldSpec(fmt="f", name="absVibrations", description="vibrations sent to the FFB, could be used for motion rigs"),
 ]
 
 
@@ -127,6 +129,11 @@ class AssettoCorsaData:
             for field in FIELDS:
                 read_size = max(1, field.count)
                 values = [next(raw_values_iter) for _ in range(read_size)]
+
+                if not field.available:
+                    # If the field is not used, just skip it
+                    continue
+
                 value = values[0] if not field.count else values
                 yield field.name, value
 
@@ -178,8 +185,20 @@ class AssettoCorsaData:
 
 
 if __name__ == '__main__':
+    # make ANSI escapes work on windows
+    import colorama
+    colorama.init()
+
     assettoReader = AssettoCorsaData()
     assettoReader.start()
+
     while True:
-        print('Assetto data:', assettoReader.getData())
-        time.sleep(1)
+        data = assettoReader.getData()
+        # print(json.dumps(data))
+        sys.stdout.write("\x1b[H\x1b[2J\x1b[3J")
+        for name, value in data.items():
+            if name.startswith('tyreContact'):
+                continue
+            print(f"{name}: {value}")
+        print()
+        time.sleep(.1)
